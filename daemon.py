@@ -120,7 +120,8 @@ class API(http.server.BaseHTTPRequestHandler):
         if url.path == "/phoneNumberList":
             self.__send_json(dict(
                 message="Phone numbers available.",
-                numbers=PHONE_NUMBERS
+                numbers=PHONE_NUMBERS,
+                numbersEnabled=True
             ))
             return
         elif url.path == "/conferenceMapper":
