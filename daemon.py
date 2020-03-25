@@ -3,17 +3,22 @@ import typing
 import sqlite3
 import time
 import sys
+import os.path
 import json
 import http.server
 from urllib.parse import urlparse, parse_qs
 
-DB_FILE = "/tmp/test.db"
-EXPIRE_SECONDS = 60 * 60 * 24 * 3
-ID_LENGTH = 5
-PORT = 8888
-PHONE_NUMBERS = dict(
-    DE=["+49123456789"]
+script_dir = os.path.dirname(os.path.realpath(__file__))
+
+with open(os.path.join(script_dir, "config.json")) as f:
+    config = json.load(f)
+
+DB_FILE = config["db_file"] if (config["db_file"] is not None) else os.path.join(
+    script_dir,
+    "ConferenceMaps.db"
 )
+HOST = config["host"]
+PORT = config["port"]
 
 conn = sqlite3.connect(DB_FILE)
 
@@ -83,7 +88,7 @@ class ConferenceMaps:
         if h < 0:
             h += sys.maxsize
         h += offset
-        return int(str(h)[-ID_LENGTH:])
+        return int(str(h)[-config["id_max_length"]:])
 
 
     def find_by_id(self, room_id: int) -> typing.Optional[str]:
@@ -104,7 +109,7 @@ class ConferenceMaps:
         c = self.cursor
         c.execute(
             "DELETE FROM conferences WHERE created_time < ?",
-            (self.current_timestamp - EXPIRE_SECONDS,)
+            (self.current_timestamp - config["expire_seconds"],)
         )
         conn.commit()
 
@@ -120,7 +125,7 @@ class API(http.server.BaseHTTPRequestHandler):
         if url.path == "/phoneNumberList":
             self.__send_json(dict(
                 message="Phone numbers available.",
-                numbers=PHONE_NUMBERS,
+                numbers=config["numbers"],
                 numbersEnabled=True
             ))
             return
@@ -186,7 +191,7 @@ class API(http.server.BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    httpd = http.server.HTTPServer(("0.0.0.0", PORT,), API)
+    httpd = http.server.HTTPServer((HOST, PORT,), API)
     try:
         log(f"Launching HTTP server on port {PORT}")
         httpd.serve_forever()
