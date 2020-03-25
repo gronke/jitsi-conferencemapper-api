@@ -2,7 +2,7 @@
 	"numbers": {
 		"DE": ["+49123456789"]
 	},
-	"port": "8823",
+	"port": 8823,
 	"host": "0.0.0.0",
 	"expire_seconds": 86400,
 	"id_max_length": 5,
